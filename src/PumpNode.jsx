@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // Add '?react' if using Vite (vite-plugin-svgr)
+import Pumpsvg from "./assets/pump_dynamic.svg?react";
 
 const DEFAULT_TELEMETRY = {
   flow: 120,       // m³/h
@@ -36,11 +37,29 @@ export default function PumpNode({
 
   // State color mapping
   const COLOR_MAP = {
-    running: { stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.2)', text: '#10b981' }, // Green
-    manual:  { stroke: '#3b82f6', fill: 'rgba(59, 130, 246, 0.2)',  text: '#3b82f6' }, // Blue
-    idle:    { stroke: '#eab308', fill: 'rgba(234, 179, 8, 0.2)',   text: '#eab308' }, // Yellow
-    error:   { stroke: '#ef4444', fill: 'rgba(239, 68, 68, 0.25)',  text: '#ef4444' }, // Red
-  };
+  running: { 
+    fill: '#1CB66C', stroke: '#07704B', text: '#1CB66C' },
+  
+  manual: { 
+    fill: '#3B82F6',
+    stroke: '#1D4ED8',
+    text: '#3B82F6' 
+  },
+  
+  // Yellow/Amber (Idle / Standby)
+  idle: { 
+    fill: '#EAB308',    // Amber/yellow body fill
+    stroke: '#A16207',  // Dark gold accent/shadow stroke
+    text: '#EAB308' 
+  },
+  
+  // Red (Error / Alarm)
+  error: { 
+    fill: '#EF4444',    // Bright alarm red body fill
+    stroke: '#991B1B',  // Dark maroon accent/shadow stroke
+    text: '#EF4444' 
+  },
+};
 
   const currentTheme = COLOR_MAP[state];
 
@@ -87,41 +106,20 @@ export default function PumpNode({
     <>
       {/* 1. Pure SVG Node (No outer card background or frame) */}
       <div
-        className="pump-node-pure"
-        onClick={handleNodeClick}>
-        <svg width="100" height="110" viewBox="0 0 100 110">
-          {/* Outer Housing Circle */}
-          <circle cx="50" cy="50" r="38" fill="#0f172a" stroke={currentTheme.stroke} strokeWidth="3.5" />
-
-          {/* Dynamic Background Glow */}
-          <circle cx="50" cy="50" r="33" fill={currentTheme.fill} />
-
-          {/* Outlet Pipe Flanges */}
-          <path d="M50,12 L50,0 M88,50 L100,50" stroke={currentTheme.stroke} strokeWidth="5" strokeLinecap="round" />
-
-          {/* Rotating Impeller / Rotor */}
-          <g className={`pump-rotor ${isSpinning ? 'spinning' : ''}`}>
-            <circle cx="50" cy="50" r="7" fill={currentTheme.stroke} />
-            <path
-              d="M50,20 L50,80 M20,50 L80,50"
-              stroke={currentTheme.stroke}
-              strokeWidth="3.5"
-              strokeLinecap="round"
-            />
-            <circle cx="50" cy="27" r="3.5" fill={currentTheme.stroke} />
-            <circle cx="50" cy="73" r="3.5" fill={currentTheme.stroke} />
-            <circle cx="27" cy="50" r="3.5" fill={currentTheme.stroke} />
-            <circle cx="73" cy="50" r="3.5" fill={currentTheme.stroke} />
-          </g>
-
-          {/* Status Alert Badge for Error */}
-          {state === 'error' && (
-            <g transform="translate(62, 14)">
-              <circle cx="10" cy="10" r="10" fill="#ef4444" />
-              <text x="10" y="14" fill="#fff" fontSize="12" fontWeight="bold" textAnchor="middle">!</text>
-            </g>
-          )}
-        </svg>
+      className="pump-node-pure"
+      onClick={handleNodeClick}
+      style={{
+        width: "150px",
+        height: "100px",
+        '--stroke': currentTheme.stroke,
+        '--fill': currentTheme.fill,
+      }}
+      >
+          <div className={`pump-heat-reading ${liveData.temp > 50 ? 'warning' : ''}`}>
+            <span>HEAT</span>
+            <strong>{liveData.temp}°C</strong>
+          </div>
+          <Pumpsvg width="100%" height="100%" />
       </div>
 
       {/* 2. Modal Dialog with Rotary Switch Control */}
@@ -226,12 +224,45 @@ export default function PumpNode({
       <style>{`
         /* Pure SVG Node */
         .pump-node-pure {
+          position: relative;
           cursor: pointer;
           user-select: none;
           transition: transform 0.15s ease;
         }
         .pump-node-pure:hover {
           transform: scale(1.08);
+        }
+        .pump-heat-reading {
+          position: absolute;
+          top: -8px;
+          left: -8px;
+          z-index: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 1px;
+          min-width: 52px;
+          padding: 4px 6px;
+          border: 1px solid rgba(251, 191, 36, 0.55);
+          border-radius: 5px;
+          background: rgba(15, 23, 42, 0.94);
+          color: #fbbf24;
+          box-shadow: 0 3px 8px rgba(2, 6, 23, 0.4);
+          pointer-events: none;
+        }
+        .pump-heat-reading span {
+          color: #94a3b8;
+          font-size: 8px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          line-height: 1;
+        }
+        .pump-heat-reading strong {
+          font-size: 11px;
+          line-height: 1.1;
+        }
+        .pump-heat-reading.warning {
+          border-color: rgba(248, 113, 113, 0.7);
+          color: #f87171;
         }
         .node-label-text {
           font-family: system-ui, -apple-system, sans-serif;
