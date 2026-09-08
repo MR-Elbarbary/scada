@@ -1,0 +1,68 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <!-- Main Outer Outlines & Shapes -->
+  <g stroke="#070706" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    
+    <!-- Base Mounting Skids -->
+    <rect x="70" y="330" width="260" height="20" rx="4" fill="var(--fill, currentColor)" />
+    <!-- Skid Mounting Bolts -->
+    <circle cx="90" cy="340" r="4" fill="#FDFDFE" />
+    <circle cx="310" cy="340" r="4" fill="#FDFDFE" />
+
+    <!-- Radiator Cooling Fins (Left Side) -->
+    <rect x="60" y="160" width="50" height="150" rx="6" fill="var(--fill, currentColor)" />
+    <line x1="75" y1="175" x2="75" y2="295" stroke="var(--stroke, currentColor)" stroke-width="4" />
+    <line x1="85" y1="175" x2="85" y2="295" stroke="var(--stroke, currentColor)" stroke-width="4" />
+    <line x1="95" y1="175" x2="95" y2="295" stroke="var(--stroke, currentColor)" stroke-width="4" />
+
+    <!-- Radiator Cooling Fins (Right Side) -->
+    <rect x="290" y="160" width="50" height="150" rx="6" fill="var(--fill, currentColor)" />
+    <line x1="305" y1="175" x2="305" y2="295" stroke="var(--stroke, currentColor)" stroke-width="4" />
+    <line x1="315" y1="175" x2="315" y2="295" stroke="var(--stroke, currentColor)" stroke-width="4" />
+    <line x1="325" y1="175" x2="325" y2="295" stroke="var(--stroke, currentColor)" stroke-width="4" />
+
+    <!-- Main Transformer Tank Body -->
+    <rect x="110" y="140" width="180" height="180" rx="10" fill="var(--fill, currentColor)" />
+
+    <!-- Radiator Connection Pipes -->
+    <rect x="100" y="175" width="20" height="12" fill="var(--stroke, currentColor)" />
+    <rect x="100" y="275" width="20" height="12" fill="var(--stroke, currentColor)" />
+    <rect x="280" y="175" width="20" height="12" fill="var(--stroke, currentColor)" />
+    <rect x="280" y="275" width="20" height="12" fill="var(--stroke, currentColor)" />
+
+    <!-- Oil Conservator Tank (Top Cylinder) -->
+    <rect x="130" y="90" width="140" height="40" rx="20" fill="var(--fill, currentColor)" />
+    <!-- Conservator Level Gauge Window -->
+    <circle cx="230" cy="110" r="10" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="3" />
+    <line x1="223" y1="110" x2="237" y2="110" stroke="var(--stroke, currentColor)" stroke-width="3" />
+
+    <!-- High-Voltage Porcelain Insulator Bushings (Top Terminals) -->
+    <!-- Left Bushing -->
+    <line x1="150" y1="90" x2="150" y2="40" stroke="#070706" stroke-width="8" />
+    <rect x="141" y="50" width="18" height="8" rx="2" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="2" />
+    <rect x="139" y="62" width="22" height="8" rx="2" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="2" />
+    <rect x="137" y="74" width="26" height="8" rx="2" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="2" />
+    <circle cx="150" cy="38" r="5" fill="#FDFDFE" />
+
+    <!-- Center Bushing -->
+    <line x1="200" y1="90" x2="200" y2="30" stroke="#070706" stroke-width="8" />
+    <rect x="191" y="42" width="18" height="8" rx="2" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="2" />
+    <rect x="189" y="54" width="22" height="8" rx="2" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="2" />
+    <rect x="187" y="66" width="26" height="8" rx="2" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="2" />
+    <circle cx="200" cy="28" r="5" fill="#FDFDFE" />
+
+    <!-- Right Bushing -->
+    <line x1="250" y1="90" x2="250" y2="40" stroke="#070706" stroke-width="8" />
+    <rect x="241" y="50" width="18" height="8" rx="2" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="2" />
+    <rect x="239" y="62" width="22" height="8" rx="2" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="2" />
+    <rect x="237" y="74" width="26" height="8" rx="2" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="2" />
+    <circle cx="250" cy="38" r="5" fill="#FDFDFE" />
+
+    <!-- High Voltage Warning Symbol on Front Panel -->
+    <polygon points="200,185 185,225 200,225 190,265 215,215 200,215" fill="var(--stroke, currentColor)" stroke="none" />
+
+    <!-- Front Control Panel Plate -->
+    <rect x="150" y="275" width="100" height="30" rx="4" fill="var(--fill, currentColor)" stroke="var(--stroke, currentColor)" stroke-width="3" />
+    <circle cx="160" cy="290" r="3" fill="#FDFDFE" stroke="#070706" stroke-width="1.5" />
+    <circle cx="240" cy="290" r="3" fill="#FDFDFE" stroke="#070706" stroke-width="1.5" />
+  </g>
+</svg>
