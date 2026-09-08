@@ -22,7 +22,7 @@ export default function TankNode({
   const [mode, setMode] = useState(initialMode);
   const [hasError, setHasError] = useState(isFaulted);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [liveData, setLiveData] = useState(telemetry);
+  const [liveData, setLiveData] = useState({ ...DEFAULT_TELEMETRY, ...telemetry });
 
   // Computed state
   const isHighLevel = liveData.level >= 90;
