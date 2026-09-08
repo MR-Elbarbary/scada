@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import PumpNode from './PumpNode.jsx';
 import TankNode from './TankNode.jsx';
+import FlowmeterNode from './FlowmeterNode.jsx';
+import TransformerNode from './TransformerNode.jsx';
 import IndustrialPipesCanvas from './IndustrialPipesCanvas.jsx';
 
 
@@ -13,8 +15,11 @@ const Node_TEMPLATE = {
 
 const NODE_COMPONENTS = {
   pump: PumpNode,
-  tank: TankNode
+  tank: TankNode,
+  flowmeter: FlowmeterNode,
+  transformer: TransformerNode
 };
+
 
 const initialNodes = [
   {
@@ -32,31 +37,27 @@ const initialNodes = [
         temp: 45.5,
         rpm: 2950,
       },
+
   },
   {
-    id: 'p2',
-    type: 'pump',
-    label: 'PMP-02',
-    x: 450,
-    y: 180,
-
-      mode: 'manual',
+    id: 't1',
+    type:'tank',
+    label:'TNK-01',
+    x: 300,
+    y: 400,
+    mode: 'auto',
       isFaulted: false,
       telemetry: {
-        flow: 95,
-        pressure: 3.8,
-        power: 62,
-        temp: 42.1,
-        rpm: 2800,
       },
-  },
-];
-
-const initialConnections = [{ id: 'c1', from: 'p1', to: 'p2' }];
+  }]
+const initialConnections = [{ id: 'c1', from: 'p1', to: 't1' }];
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
+
+
+// refactor this function
 
 function getNodeCenter(node) {
   // Center relative to 100x110 SVG dimensions of PumpNode
@@ -72,7 +73,18 @@ export default function App() {
   const [connectionMode, setConnectionMode] = useState(false);
   const [pendingConnectionSourceId, setPendingConnectionSourceId] = useState(null);
   const dragState = useRef(null);
+  const schemaPanelRef = useRef(null);
+  const [isCanvasFullscreen, setIsCanvasFullscreen] = useState(false);
   const [editMode, setEditMode] = useState(true);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsCanvasFullscreen(document.fullscreenElement === schemaPanelRef.current);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   // Live Telemetry Simulation for Pumps
   useEffect(() => {
@@ -80,15 +92,15 @@ export default function App() {
 
     // fix this !!!!!
     const interval = setInterval(() => {
-      setNodes((currentPumps) =>
-        currentPumps.map((pump) => {
-          if (pump.mode === 'off' || pump.isFaulted) {
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.mode === 'off' || node.isFaulted) {
             return {
-              ...pump,
+              ...node,
               telemetry: {
-                ...pump.telemetry,
+                ...node.telemetry,
                 flow: 0,
-                pressure: Number((pump.telemetry.pressure * 0.85).toFixed(1)),
+                pressure: Number((node.telemetry.pressure * 0.85).toFixed(1)),
                 power: 0,
                 rpm: 0,
               },
@@ -96,13 +108,13 @@ export default function App() {
           }
 
           return {
-            ...pump,
+            ...node,
             telemetry: {
-              flow: Math.round(clamp(pump.telemetry.flow + (Math.random() - 0.5) * 20, 50, 180)),
-              pressure: Number(clamp(pump.telemetry.pressure + (Math.random() - 0.5) * 0.8, 2.0, 8.5).toFixed(1)),
-              power: Math.round(clamp(pump.telemetry.power + (Math.random() - 0.5) * 15, 30, 100)),
-              temp: Number(clamp(pump.telemetry.temp + (Math.random() - 0.5) * 2, 30, 85).toFixed(1)),
-              rpm: Math.round(clamp(pump.telemetry.rpm + (Math.random() - 0.5) * 100, 2400, 3200)),
+              flow: Math.round(clamp(node.telemetry.flow + (Math.random() - 0.5) * 20, 50, 180)),
+              pressure: Number(clamp(node.telemetry.pressure + (Math.random() - 0.5) * 0.8, 2.0, 8.5).toFixed(1)),
+              power: Math.round(clamp(node.telemetry.power + (Math.random() - 0.5) * 15, 30, 100)),
+              temp: Number(clamp(node.telemetry.temp + (Math.random() - 0.5) * 2, 30, 85).toFixed(1)),
+              rpm: Math.round(clamp(node.telemetry.rpm + (Math.random() - 0.5) * 100, 2400, 3200)),
             },
           };
         })
@@ -113,9 +125,17 @@ export default function App() {
   }, [liveMode]);
 
   const selectedNode = nodes.find((p) => p.id === selectedId) ?? nodes[0] ?? null;
+  const canvasBounds = useMemo(
+    () => ({
+      width: Math.max(900, ...nodes.map((node) => node.x + 190)),
+      height: Math.max(560, ...nodes.map((node) => node.y + 140)),
+    }),
+    [nodes]
+  );
 
   const handleNodePointerDown = (event, node) => {
     if (connectionMode) return;
+    if (!editMode) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
 
@@ -173,6 +193,9 @@ export default function App() {
 
   const addNode = (type) => {
     const nextId = `p-${Date.now()}`;
+    const telemetry = type === 'tank'
+      ? { level: 68, volume: 13.6, capacity: 20.0, inflow: 45.2, outflow: 42.0, temperature: 24.5 }
+      : { flow: 110, pressure: 4.0, power: 75, temp: 40.0, rpm: 2900 };
     const newNode = {
       id: nextId,
       type,
@@ -181,7 +204,7 @@ export default function App() {
       y: 150 + Math.floor(nodes.length / 4) * 120,
       mode: 'auto',
       isFaulted: false,
-      telemetry: { flow: 110, pressure: 4.0, power: 75, temp: 40.0, rpm: 2900 },
+      telemetry,
       editMode: editMode
     };
 
@@ -269,6 +292,21 @@ export default function App() {
     );
   };
 
+  const toggleCanvasFullscreen = () => {
+    if (!schemaPanelRef.current) return;
+
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+      return;
+    }
+
+    if (schemaPanelRef.current.requestFullscreen) {
+      schemaPanelRef.current.requestFullscreen();
+    } else {
+      setIsCanvasFullscreen(true);
+    }
+  };
+
   return (
     <div className="scada-app">
       <aside className="sidebar">
@@ -329,7 +367,7 @@ export default function App() {
             {liveMode ? 'Pause Telemetry' : 'Resume Telemetry'}
           </button>
 
-          <button type="button" className="secondary" onClick={() => setEditMode((v) => !v)}>
+          <button type="button" className={`secondary ${editMode? 'on' : 'off'}`} onClick={() => setEditMode((v) => !v)}>
             {editMode ? 'Disable Edit Mode' : 'Enable Edit Mode'}
           </button>
         </div>
@@ -354,13 +392,33 @@ export default function App() {
         </header>
 
         <div className="content-grid">
-          <section className="schema-panel">
+          <section
+            ref={schemaPanelRef}
+            className={`schema-panel ${isCanvasFullscreen ? 'is-fullscreen' : ''}`}
+          >
             <div className="panel-header">
               <span>CANVAS DIAGRAM</span>
-              <span className="status-pill">LIVE</span>
+              <div className="panel-header-actions">
+                <span className="status-pill">LIVE</span>
+                <button
+                  type="button"
+                  className="fullscreen-button"
+                  onClick={toggleCanvasFullscreen}
+                  aria-label={isCanvasFullscreen ? 'Exit full screen' : 'Open canvas in full screen'}
+                >
+                  {isCanvasFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+                </button>
+              </div>
             </div>
 
-            <div className="schema-canvas" style={{ position: 'relative' }}>
+            <div
+              className="schema-canvas"
+              style={{
+                position: 'relative',
+                minWidth: `${canvasBounds.width}px`,
+                minHeight: `${canvasBounds.height}px`,
+              }}
+            >
               {/* Dynamic Connecting Lines SVG Layer */}
               {/* 1. Industrial Pipes Canvas Layer */}
               <IndustrialPipesCanvas
@@ -370,7 +428,7 @@ export default function App() {
                   setSelectedId(null);
                 }}
               />
-              {/* Pure SVG Pump Nodes */}
+              {/* Nodes */}
               {nodes.map((node) => {
                 const NodeComponent = NODE_COMPONENTS[node.type];
 
@@ -392,7 +450,11 @@ export default function App() {
                     <NodeComponent
                       id={node.id}
                       label={node.label}
+                      initialMode={node.mode}
+                      isFaulted={node.isFaulted}
+                      telemetry={node.telemetry}
                       editMode={editMode}
+                      onModeChange={handleModeChange}
                       onChange={handleNodeChange}
                       onClick={() => handleNodeClick(node.id)}
                     />

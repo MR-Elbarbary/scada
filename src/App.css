@@ -76,6 +76,14 @@
   border-color: rgba(34, 211, 238, 0.8);
 }
 
+.on {
+  border-color: #34d399;
+}
+
+.off {
+  border-color: rgb(255, 208, 0);
+}
+
 .dot {
   display: inline-block;
   width: 10px;
@@ -104,6 +112,7 @@
 
 .workspace {
   flex: 1;
+  min-width: 0;
   padding: 18px 20px 20px;
 }
 
@@ -155,6 +164,8 @@
   grid-template-columns: minmax(0, 2.2fr) minmax(290px, 0.8fr);
   gap: 18px;
   margin-top: 18px;
+  height: calc(100vh - 140px);
+  min-height: 0;
 }
 
 .schema-panel,
@@ -163,6 +174,13 @@
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 18px;
   overflow: hidden;
+}
+
+.schema-panel {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
 }
 
 .panel-header {
@@ -176,6 +194,30 @@
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fullscreen-button {
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: rgba(8, 47, 73, 0.75);
+  color: #bae6fd;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.fullscreen-button:hover {
+  border-color: #22d3ee;
+  color: #ecfeff;
 }
 
 .status-pill {
@@ -195,13 +237,33 @@
 
 .schema-canvas {
   position: relative;
-  height: 560px;
+  width: max(900px, 100vw);
+  height: max(800px, 100vh);
   background:
     linear-gradient(rgba(96, 165, 250, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(96, 165, 250, 0.06) 1px, transparent 1px),
     rgba(3, 7, 18, 0.9);
   background-size: 28px 28px, 28px 28px, cover;
   overflow: visible;
+}
+
+.schema-panel:fullscreen,
+.schema-panel.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+  background: #030712;
+}
+
+.schema-panel:fullscreen .schema-canvas,
+.schema-panel.is-fullscreen .schema-canvas {
+  flex: 1;
+  width: 100%;
+  height: auto;
+  min-height: 0;
 }
 
 .connection-layer {
@@ -471,9 +533,15 @@
 
   .content-grid {
     grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .schema-panel {
+    height: auto;
   }
 
   .schema-canvas {
-    height: 440px;
+    width: max(720px, 100vw);
+    height: max(700px, 100vh);
   }
 }
