@@ -8,4 +8,9 @@ export default defineConfig({
     react(),
     svgr()
   ],
+  server: {
+    proxy: {
+      '/api': 'https://gridapi.seragit.com',
+    },
+  },
 })
