@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import PumpNode from './PumpNode.jsx';
 import TankNode from './TankNode.jsx';
 import FlowmeterNode from './FlowmeterNode.jsx';
 import TransformerNode from './TransformerNode.jsx';
 import IndustrialPipesCanvas from './IndustrialPipesCanvas.jsx';
+import ValveNode from './ValveNode.jsx';
 
 
 const Node_TEMPLATE = {
@@ -17,40 +18,13 @@ const NODE_COMPONENTS = {
   pump: PumpNode,
   tank: TankNode,
   flowmeter: FlowmeterNode,
-  transformer: TransformerNode
+  transformer: TransformerNode,
+  valve: ValveNode,
 };
 
 
-const initialNodes = [
-  {
-    id: 'p1',
-    type: 'pump',
-    label: 'PMP-01',
-    x: 120,
-    y: 180,
-      mode: 'auto',
-      isFaulted: false,
-      telemetry: {
-        flow: 120,
-        pressure: 4.2,
-        power: 78,
-        temp: 45.5,
-        rpm: 2950,
-      },
-
-  },
-  {
-    id: 't1',
-    type:'tank',
-    label:'TNK-01',
-    x: 300,
-    y: 400,
-    mode: 'auto',
-      isFaulted: false,
-      telemetry: {
-      },
-  }]
-const initialConnections = [{ id: 'c1', from: 'p1', to: 't1' }];
+const initialNodes = [];
+const initialConnections = [];
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -64,6 +38,35 @@ function getNodeCenter(node) {
   return { x: node.x + 50, y: node.y + 50 };
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+function readingToTelemetry(reading) {
+  const metrics = reading.metrics ?? {};
+
+  return {
+    mode: String(reading.state).toLowerCase() === 'off' ? 'off' : 'auto',
+    isFaulted: ['fault', 'error', 'alarm'].includes(String(reading.state).toLowerCase()),
+    telemetry: {
+      current: [metrics.i_l1, metrics.i_l2, metrics.i_l3],
+      unbalance: metrics.unbalance_percentage,
+      temperature: metrics.temperature,
+    },
+  };
+}
+
+function createPumpNode(reading, index, id) {
+  return {
+    id,
+    pumpId: String(reading.id),
+    type: 'pump',
+    label: reading.name || `Pump ${reading.id}`,
+    x: 100 + (index % 4) * 180,
+    y: 120 + Math.floor(index / 4) * 150,
+    tags: ['heat'],
+    ...readingToTelemetry(reading),
+  };
+}
+
 export default function App() {
   const [nodes, setNodes] = useState(initialNodes);
   const [connections, setConnections] = useState(initialConnections);
@@ -73,9 +76,19 @@ export default function App() {
   const [connectionMode, setConnectionMode] = useState(false);
   const [pendingConnectionSourceId, setPendingConnectionSourceId] = useState(null);
   const dragState = useRef(null);
+  const generatedNodeId = useRef(0);
   const schemaPanelRef = useRef(null);
+  const loadedLayoutGateway = useRef('');
   const [isCanvasFullscreen, setIsCanvasFullscreen] = useState(false);
   const [editMode, setEditMode] = useState(true);
+  const [gateways, setGateways] = useState([]);
+  const [selectedGateway, setSelectedGateway] = useState('');
+  const [gatewayStatus, setGatewayStatus] = useState('Loading gateways...');
+  const [pumpReadings, setPumpReadings] = useState([]);
+  const [selectedPumpId, setSelectedPumpId] = useState('');
+  const generatedConnectionId = useRef(0);
+
+  const layoutStorageKey = selectedGateway ? `scada-layout:${selectedGateway}` : '';
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -86,43 +99,87 @@ export default function App() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Live Telemetry Simulation for Pumps
   useEffect(() => {
-    if (!liveMode) return undefined;
+    if (!selectedGateway) return;
 
-    // fix this !!!!!
-    const interval = setInterval(() => {
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.mode === 'off' || node.isFaulted) {
-            return {
-              ...node,
-              telemetry: {
-                ...node.telemetry,
-                flow: 0,
-                pressure: Number((node.telemetry.pressure * 0.85).toFixed(1)),
-                power: 0,
-                rpm: 0,
-              },
-            };
-          }
+    let savedLayout = null;
+    try {
+      savedLayout = JSON.parse(localStorage.getItem(layoutStorageKey) || 'null');
+    } catch {
+      savedLayout = null;
+    }
 
-          return {
-            ...node,
-            telemetry: {
-              flow: Math.round(clamp(node.telemetry.flow + (Math.random() - 0.5) * 20, 50, 180)),
-              pressure: Number(clamp(node.telemetry.pressure + (Math.random() - 0.5) * 0.8, 2.0, 8.5).toFixed(1)),
-              power: Math.round(clamp(node.telemetry.power + (Math.random() - 0.5) * 15, 30, 100)),
-              temp: Number(clamp(node.telemetry.temp + (Math.random() - 0.5) * 2, 30, 85).toFixed(1)),
-              rpm: Math.round(clamp(node.telemetry.rpm + (Math.random() - 0.5) * 100, 2400, 3200)),
-            },
-          };
+    loadedLayoutGateway.current = selectedGateway;
+    const restoreTimer = window.setTimeout(() => {
+      setNodes(savedLayout?.nodes ?? []);
+      setConnections(savedLayout?.connections ?? []);
+      setSelectedId(savedLayout?.nodes?.[0]?.id ?? null);
+      setSelectedConnectionId(null);
+    }, 0);
+
+    return () => window.clearTimeout(restoreTimer);
+  }, [layoutStorageKey, selectedGateway]);
+
+  useEffect(() => {
+    if (!layoutStorageKey || loadedLayoutGateway.current !== selectedGateway) return;
+    localStorage.setItem(layoutStorageKey, JSON.stringify({ nodes, connections }));
+  }, [layoutStorageKey, nodes, connections, selectedGateway]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/gw`)
+      .then((response) => {
+        if (!response.ok) throw new Error('Unable to load gateways');
+        return response.json();
+      })
+      .then((payload) => {
+        const nextGateways = payload.data ?? [];
+        setGateways(nextGateways);
+        setSelectedGateway(nextGateways[0]?.gw ?? '');
+        setGatewayStatus(nextGateways.length ? '' : 'No gateways found');
+      })
+      .catch(() => setGatewayStatus('Backend unavailable'));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedGateway) return undefined;
+
+    let isCurrent = true;
+    const loadReadings = () => {
+      setGatewayStatus('Loading pump data...');
+      fetch(`${API_BASE_URL}/api/gw_readings/${encodeURIComponent(selectedGateway)}`)
+        .then((response) => {
+          if (!response.ok) throw new Error('Unable to load pump data');
+          return response.json();
         })
-      );
-    }, 1800);
+        .then((payload) => {
+          if (!isCurrent) return;
+          const nextReadings = payload.data ?? [];
+          setPumpReadings(nextReadings);
+          setSelectedPumpId((current) => (
+            nextReadings.some((reading) => String(reading.id) === String(current))
+              ? current
+              : String(nextReadings[0]?.id ?? '')
+          ));
+          setNodes((currentNodes) => currentNodes.map((node) => {
+            if (node.type !== 'pump') return node;
+            const reading = nextReadings.find((item) => String(item.id) === String(node.pumpId));
+            return reading ? { ...node, ...readingToTelemetry(reading) } : node;
+          }));
+          setGatewayStatus(`${nextReadings.length} pump${nextReadings.length === 1 ? '' : 's'} available`);
+        })
+        .catch(() => {
+          if (isCurrent) setGatewayStatus('Unable to load pump data');
+        });
+    };
 
-    return () => clearInterval(interval);
-  }, [liveMode]);
+    loadReadings();
+    const interval = liveMode ? setInterval(loadReadings, 5000) : undefined;
+
+    return () => {
+      isCurrent = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [selectedGateway, liveMode]);
 
   const selectedNode = nodes.find((p) => p.id === selectedId) ?? nodes[0] ?? null;
   const canvasBounds = useMemo(
@@ -165,6 +222,12 @@ export default function App() {
     );
   };
 
+  const handleTagsChange = (nodeId, tags) => {
+    setNodes((current) => current.map((node) => (
+      node.id === nodeId ? { ...node, tags } : node
+    )));
+  };
+
   // Generate path vectors between dynamic SVG pump coordinates
   const connectionData = useMemo(() => {
     return connections
@@ -192,7 +255,19 @@ export default function App() {
   }, [connections, nodes, selectedConnectionId]);
 
   const addNode = (type) => {
-    const nextId = `p-${Date.now()}`;
+    if (type === 'pump') {
+      const reading = pumpReadings.find((item) => String(item.id) === String(selectedPumpId));
+      if (!reading || nodes.some((node) => node.pumpId === String(reading.id))) return;
+      generatedNodeId.current += 1;
+      const nextId = `pump-node-${generatedNodeId.current}`;
+      const newNode = createPumpNode(reading, nodes.length, nextId);
+      setNodes((current) => [...current, newNode]);
+      setSelectedId(nextId);
+      return;
+    }
+
+    generatedNodeId.current += 1;
+    const nextId = `p-${generatedNodeId.current}`;
     const telemetry = type === 'tank'
       ? { level: 68, volume: 13.6, capacity: 20.0, inflow: 45.2, outflow: 42.0, temperature: 24.5 }
       : { flow: 110, pressure: 4.0, power: 75, temp: 40.0, rpm: 2900 };
@@ -205,7 +280,7 @@ export default function App() {
       mode: 'auto',
       isFaulted: false,
       telemetry,
-      editMode: editMode
+      editMode: editMode,
     };
 
     setNodes((current) => [...current, newNode]);
@@ -221,7 +296,8 @@ export default function App() {
         (c) => (c.from === fromId && c.to === toId) || (c.from === toId && c.to === fromId)
       );
       if (alreadyExists) return current;
-      return [...current, { id: `c-${Date.now()}`, from: fromId, to: toId }];
+      generatedConnectionId.current += 1;
+      return [...current, { id: `c-${generatedConnectionId.current}`, from: fromId, to: toId }];
     });
   };
 
@@ -320,7 +396,34 @@ export default function App() {
 
         <div className="palette">
           <p className="panel-label">DEVICE LIBRARY</p>
-          {Object.keys(NODE_COMPONENTS).map((key) => (
+          <label className="panel-label" htmlFor="pump-association">ASSOCIATE PUMP</label>
+          <select
+            id="pump-association"
+            className="gateway-select"
+            value={selectedPumpId}
+            onChange={(event) => setSelectedPumpId(event.target.value)}
+            disabled={!pumpReadings.length}
+          >
+            {!pumpReadings.length && <option value="">Fetch a gateway first</option>}
+            {pumpReadings.map((pump) => {
+              const isAttached = nodes.some((node) => node.pumpId === String(pump.id));
+              return (
+                <option key={pump.id} value={pump.id} disabled={isAttached}>
+                  {pump.name || `Pump ${pump.id}`}{isAttached ? ' (added)' : ''}
+                </option>
+              );
+            })}
+          </select>
+          <button
+            type="button"
+            className="asset-button"
+            onClick={() => addNode('pump')}
+            disabled={!selectedPumpId || nodes.some((node) => node.pumpId === String(selectedPumpId))}
+          >
+            <span className="dot dot-amber" />
+            Create Pump Node
+          </button>
+          {Object.keys(NODE_COMPONENTS).filter((key) => key !== 'pump').map((key) => (
             <button
               key={key}
               type="button"
@@ -331,6 +434,25 @@ export default function App() {
               Add {key} Node
             </button>
           ))}
+        </div>
+
+        <div className="gateway-picker">
+          <label className="panel-label" htmlFor="gateway-select">GATEWAY SITE</label>
+          <select
+            id="gateway-select"
+            className="gateway-select"
+            value={selectedGateway}
+            onChange={(event) => setSelectedGateway(event.target.value)}
+            disabled={!gateways.length}
+          >
+            {!gateways.length && <option value="">No gateways available</option>}
+            {gateways.map((gateway) => (
+              <option key={gateway.gw} value={gateway.gw}>
+                {gateway.site} ({gateway.gw})
+              </option>
+            ))}
+          </select>
+          <span className="gateway-status">{gatewayStatus}</span>
         </div>
 
         <div className="quick-actions">
@@ -377,7 +499,7 @@ export default function App() {
         <header className="topbar">
           <div>
             <p className="eyebrow">PROCESS SCHEMATIC</p>
-            <h2>Pumping Substation Network</h2>
+            <h2>{gateways.find((gateway) => gateway.gw === selectedGateway)?.site || 'Pumping Substation Network'}</h2>
           </div>
           <div className="topbar-metrics">
             <div className="mini-metric">
@@ -453,9 +575,11 @@ export default function App() {
                       initialMode={node.mode}
                       isFaulted={node.isFaulted}
                       telemetry={node.telemetry}
+                      initialTags={node.tags}
                       editMode={editMode}
                       onModeChange={handleModeChange}
                       onChange={handleNodeChange}
+                      onTagsChange={handleTagsChange}
                       onClick={() => handleNodeClick(node.id)}
                     />
                   </div>
@@ -493,10 +617,11 @@ export default function App() {
                   <p className="detail-meta">ID: {selectedNode.id}</p>
                   <div className="detail-list">
                     <span>Mode: {selectedNode.mode.toUpperCase()}</span>
-                    <span>Flow: {selectedNode.telemetry.flow} m³/h</span>
-                    <span>Pressure: {selectedNode.telemetry.pressure} bar</span>
-                    <span>Power: {selectedNode.telemetry.power}%</span>
-                    <span>Temp: {selectedNode.telemetry.temp} °C</span>
+                    <span>Phase L1: {selectedNode.telemetry.current?.[0] ?? '—'} A</span>
+                    <span>Phase L2: {selectedNode.telemetry.current?.[1] ?? '—'} A</span>
+                    <span>Phase L3: {selectedNode.telemetry.current?.[2] ?? '—'} A</span>
+                    <span>Imbalance: {selectedNode.telemetry.unbalance ?? '—'}%</span>
+                    <span>Temp: {selectedNode.telemetry.temperature ?? '—'} °C</span>
                   </div>
                 </>
               ) : null}

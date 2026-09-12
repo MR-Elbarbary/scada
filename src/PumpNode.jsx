@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react'; // Add '?react' if using Vite (vite-plugin-svgr)
+import { useState } from 'react';
 import Pumpsvg from "./assets/pump_dynamic.svg?react";
 
 const DEFAULT_TELEMETRY = {
-  flow: 120,       // m³/h
-  pressure: 4.2,   // bar
-  power: 78,       // %
-  temp: 45.5,      // °C
-  rpm: 2950,       // RPM
+  current: [null, null, null],
+  unbalance: null,
+  temperature: null,
 };
+
+const TAG_OPTIONS = [
+  { id: 'heat', label: 'Heat', unit: '°C' },
+  { id: 'average-current', label: 'Average Current', unit: 'A' },
+];
 
 export default function PumpNode({
   id = 'P-101',
@@ -15,14 +18,28 @@ export default function PumpNode({
   initialMode = 'auto', // 'auto' | 'manual' | 'off'
   isFaulted = false,    // set true to test error state
   telemetry = DEFAULT_TELEMETRY,
+  initialTags = ['heat'],
   onModeChange,
+  onTagsChange,
   editMode,
   onClick,
 }) {
   const [mode, setMode] = useState(initialMode);
   const [hasError, setHasError] = useState(isFaulted);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [liveData, setLiveData] = useState(telemetry);
+  const liveData = telemetry;
+  const tags = initialTags ?? [];
+  const currentValues = (liveData.current ?? []).filter((value) => value != null && !Number.isNaN(Number(value)));
+  const averageCurrent = currentValues.length
+    ? currentValues.reduce((total, value) => total + Number(value), 0) / currentValues.length
+    : null;
+
+  const toggleTag = (tagId) => {
+    const nextTags = tags.includes(tagId)
+      ? tags.filter((tag) => tag !== tagId)
+      : [...tags, tagId];
+    onTagsChange?.(id, nextTags);
+  };
 
   // Compute active status: 'error' | 'running' | 'manual' | 'idle'
   const state = hasError
@@ -32,8 +49,6 @@ export default function PumpNode({
     : mode === 'manual'
     ? 'manual'
     : 'idle';
-
-  const isSpinning = state === 'running' || state === 'manual';
 
   // State color mapping
   const COLOR_MAP = {
@@ -63,32 +78,6 @@ export default function PumpNode({
 
   const currentTheme = COLOR_MAP[state];
 
-  // Live telemetry simulation logic
-  useEffect(() => {
-    if (!isSpinning) {
-      setLiveData((prev) => ({
-        ...prev,
-        flow: 0,
-        pressure: Number((prev.pressure * 0.85).toFixed(1)),
-        power: 0,
-        rpm: 0,
-      }));
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setLiveData((prev) => ({
-        flow: Math.round(100 + (Math.random() - 0.5) * 20),
-        pressure: Number((3.8 + (Math.random() - 0.5) * 0.8).toFixed(1)),
-        power: Math.round(70 + (Math.random() - 0.5) * 15),
-        temp: Number((42 + (Math.random() - 0.5) * 4).toFixed(1)),
-        rpm: Math.round(2900 + (Math.random() - 0.5) * 100),
-      }));
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, [isSpinning]);
-
   const handleModeSwitch = (newMode) => {
     setMode(newMode);
     if (onModeChange) onModeChange(id, newMode);
@@ -106,18 +95,28 @@ export default function PumpNode({
     <>
       {/* 1. Pure SVG Node (No outer card background or frame) */}
       <div
-      className="pump-node-pure"
-      onClick={handleNodeClick}
-      style={{
-        width: "150px",
-        height: "100px",
-        '--stroke': currentTheme.stroke,
-        '--fill': currentTheme.fill,
-      }}
+        className="pump-node-pure"
+        onClick={handleNodeClick}
+        style={{
+          width: "150px",
+          height: "100px",
+          '--stroke': currentTheme.stroke,
+          '--fill': currentTheme.fill,
+        }}
       >
-          <div className={`pump-heat-reading ${liveData.temp > 50 ? 'warning' : ''}`}>
-            <span>HEAT</span>
-            <strong>{liveData.temp}°C</strong>
+          <div className="pump-tags">
+            {tags.includes('heat') && (
+              <div className={`pump-tag ${liveData.temperature > 50 ? 'warning' : ''}`}>
+                <span>HEAT</span>
+                <strong>{liveData.temperature ?? '—'}°C</strong>
+              </div>
+            )}
+            {tags.includes('average-current') && (
+              <div className="pump-tag current-tag">
+                <span>CURRENT</span>
+                <strong>{averageCurrent == null ? '—' : averageCurrent.toFixed(2)} A</strong>
+              </div>
+            )}
           </div>
           <Pumpsvg width="100%" height="100%" />
       </div>
@@ -150,27 +149,46 @@ export default function PumpNode({
                 <h4>Live Telemetry</h4>
                 <div className="metrics-grid">
                   <div className="metric-card">
-                    <span className="metric-label">Flow Rate</span>
-                    <span className="metric-value">{liveData.flow} <small>m³/h</small></span>
+                    <span className="metric-label">Phase L1</span>
+                    <span className="metric-value">{liveData.current?.[0] ?? '—'} <small>A</small></span>
                   </div>
                   <div className="metric-card">
-                    <span className="metric-label">Pressure</span>
-                    <span className="metric-value">{liveData.pressure} <small>bar</small></span>
+                    <span className="metric-label">Phase L2</span>
+                    <span className="metric-value">{liveData.current?.[1] ?? '—'} <small>A</small></span>
                   </div>
                   <div className="metric-card">
-                    <span className="metric-label">Motor Load</span>
-                    <span className="metric-value">{liveData.power} <small>%</small></span>
+                    <span className="metric-label">Phase L3</span>
+                    <span className="metric-value">{liveData.current?.[2] ?? '—'} <small>A</small></span>
                   </div>
                   <div className="metric-card">
-                    <span className="metric-label">RPM</span>
-                    <span className="metric-value">{liveData.rpm}</span>
+                    <span className="metric-label">Imbalance</span>
+                    <span className="metric-value">{liveData.unbalance ?? '—'} <small>%</small></span>
                   </div>
                   <div className="metric-card full-width">
                     <span className="metric-label">Temperature</span>
-                    <span className={`metric-value ${liveData.temp > 50 ? 'warning' : ''}`}>
-                      {liveData.temp} <small>°C</small>
+                    <span className={`metric-value ${liveData.temperature > 50 ? 'warning' : ''}`}>
+                      {liveData.temperature ?? '—'} <small>°C</small>
                     </span>
                   </div>
+                </div>
+              </section>
+
+              <section className="control-section tag-config-section">
+                <div className="control-section-header">
+                  <h4>Visible Pump Tags</h4>
+                  <span className="device-id">{tags.length} selected</span>
+                </div>
+                <div className="tag-options">
+                  {TAG_OPTIONS.map((tag) => (
+                    <label className="tag-option" key={tag.id}>
+                      <input
+                        type="checkbox"
+                        checked={tags.includes(tag.id)}
+                        onChange={() => toggleTag(tag.id)}
+                      />
+                      <span>{tag.label}</span>
+                    </label>
+                  ))}
                 </div>
               </section>
 
@@ -232,11 +250,18 @@ export default function PumpNode({
         .pump-node-pure:hover {
           transform: scale(1.08);
         }
-        .pump-heat-reading {
+        .pump-tags {
           position: absolute;
-          top: -8px;
+          bottom: calc(100% - 8px);
           left: -8px;
           z-index: 1;
+          display: flex;
+          flex-direction: column-reverse;
+          gap: 4px;
+          align-items: flex-start;
+          pointer-events: none;
+        }
+        .pump-tag {
           display: flex;
           flex-direction: column;
           gap: 1px;
@@ -247,22 +272,44 @@ export default function PumpNode({
           background: rgba(15, 23, 42, 0.94);
           color: #fbbf24;
           box-shadow: 0 3px 8px rgba(2, 6, 23, 0.4);
-          pointer-events: none;
         }
-        .pump-heat-reading span {
+        .pump-tag.current-tag {
+          border-color: rgba(96, 165, 250, 0.65);
+          color: #93c5fd;
+        }
+        .pump-tag span {
           color: #94a3b8;
           font-size: 8px;
           font-weight: 700;
           letter-spacing: 0.08em;
           line-height: 1;
         }
-        .pump-heat-reading strong {
+        .pump-tag strong {
           font-size: 11px;
           line-height: 1.1;
         }
-        .pump-heat-reading.warning {
+        .pump-tag.warning {
           border-color: rgba(248, 113, 113, 0.7);
           color: #f87171;
+        }
+        .tag-options {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+        .tag-option {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 10px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          border-radius: 6px;
+          color: #cbd5e1;
+          font-size: 12px;
+          cursor: pointer;
+        }
+        .tag-option input {
+          accent-color: #22d3ee;
         }
         .node-label-text {
           font-family: system-ui, -apple-system, sans-serif;
