@@ -56,6 +56,31 @@
   margin-top: 20px;
 }
 
+.gateway-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.gateway-select {
+  width: 100%;
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  border-radius: 8px;
+  padding: 10px;
+  background: #0f172a;
+  color: #e0f2fe;
+  font: inherit;
+}
+
+.gateway-status {
+  min-height: 14px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
 .asset-button,
 .secondary {
   border: 1px solid rgba(148, 163, 184, 0.22);
@@ -74,6 +99,12 @@
 .device-card:hover {
   transform: translateY(-1px);
   border-color: rgba(34, 211, 238, 0.8);
+}
+
+.asset-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
 }
 
 .on {
