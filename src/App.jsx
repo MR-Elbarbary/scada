@@ -42,14 +42,21 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 function readingToTelemetry(reading) {
   const metrics = reading.metrics ?? {};
+  const temperatureValid = metrics.temperature_valid ?? metrics.temp_valid ?? metrics.TEMP_VALID
+    ?? reading.temperature_valid ?? reading.temp_valid ?? reading.TEMP_VALID;
+  const currentValid = metrics.i_valid ?? metrics.I_VALID ?? reading.i_valid ?? reading.I_VALID;
+  const backendFault = ['fault', 'error', 'alarm'].includes(String(reading.state).toLowerCase());
 
   return {
     mode: String(reading.state).toLowerCase() === 'off' ? 'off' : 'auto',
-    isFaulted: ['fault', 'error', 'alarm'].includes(String(reading.state).toLowerCase()),
+    isFaulted: backendFault,
+    faultReason: backendFault ? 'Pump fault reported by telemetry' : '',
     telemetry: {
       current: [metrics.i_l1, metrics.i_l2, metrics.i_l3],
       unbalance: metrics.unbalance_percentage,
       temperature: metrics.temperature,
+      temperatureValid,
+      currentValid,
     },
   };
 }
@@ -574,6 +581,7 @@ export default function App() {
                       label={node.label}
                       initialMode={node.mode}
                       isFaulted={node.isFaulted}
+                      faultReason={node.faultReason}
                       telemetry={node.telemetry}
                       initialTags={node.tags}
                       editMode={editMode}
@@ -622,6 +630,7 @@ export default function App() {
                     <span>Phase L3: {selectedNode.telemetry.current?.[2] ?? '—'} A</span>
                     <span>Imbalance: {selectedNode.telemetry.unbalance ?? '—'}%</span>
                     <span>Temp: {selectedNode.telemetry.temperature ?? '—'} °C</span>
+                    {selectedNode.faultReason && <span className="fault-detail">Fault: {selectedNode.faultReason}</span>}
                   </div>
                 </>
               ) : null}

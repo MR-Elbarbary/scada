@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Pumpsvg from "./assets/pump_dynamic.svg?react";
 
 const DEFAULT_TELEMETRY = {
@@ -17,6 +17,7 @@ export default function PumpNode({
   label = 'Main Feed Pump',
   initialMode = 'auto', // 'auto' | 'manual' | 'off'
   isFaulted = false,    // set true to test error state
+  faultReason = '',
   telemetry = DEFAULT_TELEMETRY,
   initialTags = ['heat'],
   onModeChange,
@@ -28,6 +29,16 @@ export default function PumpNode({
   const [hasError, setHasError] = useState(isFaulted);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const liveData = telemetry;
+  const temperatureFault = liveData.temperatureValid === undefined
+    ? liveData.temperature == null
+    : Number(liveData.temperatureValid) !== 1;
+  const currentFault = liveData.currentValid !== undefined && Number(liveData.currentValid) !== 1;
+  const sensorFaultReasons = [
+    temperatureFault ? 'Temperature sensor is disconnected or invalid' : '',
+    currentFault ? 'Current sensor is disconnected or invalid' : '',
+  ].filter(Boolean);
+  const telemetryFaulted = sensorFaultReasons.length > 0;
+  const displayedFaultReason = sensorFaultReasons.join('; ') || faultReason || (hasError ? 'Pump fault reported by telemetry' : '');
   const tags = initialTags ?? [];
   const currentValues = (liveData.current ?? []).filter((value) => value != null && !Number.isNaN(Number(value)));
   const averageCurrent = currentValues.length
@@ -42,7 +53,7 @@ export default function PumpNode({
   };
 
   // Compute active status: 'error' | 'running' | 'manual' | 'idle'
-  const state = hasError
+  const state = hasError || telemetryFaulted
     ? 'error'
     : mode === 'auto'
     ? 'running'
@@ -90,6 +101,10 @@ export default function PumpNode({
     }
     if (onClick) onClick(id);
   };
+
+  useEffect(() => {
+    setHasError(isFaulted);
+  }, [isFaulted]);
 
   return (
     <>
@@ -143,6 +158,12 @@ export default function PumpNode({
                   {state.toUpperCase()}
                 </span>
               </div>
+              {displayedFaultReason && (
+                <div className="alarm-box">
+                  <strong>Fault</strong>
+                  <span>{displayedFaultReason}</span>
+                </div>
+              )}
 
               {/* Live Telemetry Grid */}
               <section className="readings-section">
