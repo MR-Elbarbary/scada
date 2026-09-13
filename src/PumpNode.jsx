@@ -39,6 +39,8 @@ export default function PumpNode({
   ].filter(Boolean);
   const telemetryFaulted = sensorFaultReasons.length > 0;
   const displayedFaultReason = sensorFaultReasons.join('; ') || faultReason || (hasError ? 'Pump fault reported by telemetry' : '');
+  const temperatureIsHot = !temperatureFault && Number(liveData.temperature) > 50;
+  const displayedTemperature = temperatureFault ? '-' : (liveData.temperature ?? '-');
   const tags = initialTags ?? [];
   const currentValues = (liveData.current ?? []).filter((value) => value != null && !Number.isNaN(Number(value)));
   const averageCurrent = currentValues.length
@@ -121,9 +123,9 @@ export default function PumpNode({
       >
           <div className="pump-tags">
             {tags.includes('heat') && (
-              <div className={`pump-tag ${liveData.temperature > 50 ? 'warning' : ''}`}>
+              <div className={`pump-tag ${temperatureIsHot ? 'warning' : ''}`}>
                 <span>HEAT</span>
-                <strong>{liveData.temperature ?? '—'}°C</strong>
+                <strong>{displayedTemperature}°C</strong>
               </div>
             )}
             {tags.includes('average-current') && (
@@ -187,8 +189,8 @@ export default function PumpNode({
                   </div>
                   <div className="metric-card full-width">
                     <span className="metric-label">Temperature</span>
-                    <span className={`metric-value ${liveData.temperature > 50 ? 'warning' : ''}`}>
-                      {liveData.temperature ?? '—'} <small>°C</small>
+                    <span className={`metric-value ${temperatureIsHot ? 'warning' : ''}`}>
+                      {displayedTemperature} <small>°C</small>
                     </span>
                   </div>
                 </div>
