@@ -94,8 +94,13 @@ export default function App() {
   const [pumpReadings, setPumpReadings] = useState([]);
   const [selectedPumpId, setSelectedPumpId] = useState('');
   const generatedConnectionId = useRef(0);
+  const [theme, setTheme] = useState(() => localStorage.getItem('scada-theme') || 'dark');
 
   const layoutStorageKey = selectedGateway ? `scada-layout:${selectedGateway}` : '';
+
+  useEffect(() => {
+    localStorage.setItem('scada-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -391,7 +396,7 @@ export default function App() {
   };
 
   return (
-    <div className="scada-app">
+    <div className={`scada-app ${theme === 'light' ? 'theme-light' : ''}`}>
       <aside className="sidebar">
         <div className="brand-block">
           <div className="brand-mark">PMP</div>
@@ -517,6 +522,15 @@ export default function App() {
               <span>ACTIVE Nodes</span>
               <strong>{nodes.filter((p) => p.mode !== 'off' && !p.isFaulted).length}</strong>
             </div>
+            <button
+              type="button"
+              className="theme-toggle"
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? '☀' : '☾'}
+            </button>
           </div>
         </header>
 
