@@ -6,6 +6,7 @@ import FlowmeterNode from './FlowmeterNode.jsx';
 import TransformerNode from './TransformerNode.jsx';
 import IndustrialPipesCanvas from './IndustrialPipesCanvas.jsx';
 import ValveNode from './ValveNode.jsx';
+import CompressorNode from './CompressorNode.jsx';
 
 
 const Node_TEMPLATE = {
@@ -20,6 +21,7 @@ const NODE_COMPONENTS = {
   flowmeter: FlowmeterNode,
   transformer: TransformerNode,
   valve: ValveNode,
+  compressor: CompressorNode,
 };
 
 
