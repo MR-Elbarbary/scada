@@ -221,7 +221,7 @@
 .theme-light .brand-block h1,
 .theme-light .topbar h2,
 .theme-light .detail-card h3 {
-  color: #173042;
+  color: #0a283d;
 }
 
 .theme-light .asset-button,
@@ -233,8 +233,12 @@
 .theme-light .kpi-card,
 .theme-light .alarm-box {
   background: rgba(255, 255, 255, 0.78);
-  color: #173042;
+  color: #0a283d;
   border-color: rgba(71, 101, 117, 0.24);
+}
+
+.theme-light .detail-list {
+  color: #0a283d;
 }
 
 .theme-light .gateway-select,
@@ -259,6 +263,13 @@
 .theme-light .canvas-shell {
   background: rgba(248, 252, 253, 0.74);
   border-color: rgba(71, 101, 117, 0.2);
+}
+
+.theme-light .schema-canvas {
+  background:
+    linear-gradient(rgba(96, 165, 250, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(96, 165, 250, 0.06) 1px, transparent 1px),
+    rgba(137, 137, 137, 0.9);
 }
 
 .mini-metric strong {
