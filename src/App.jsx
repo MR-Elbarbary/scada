@@ -44,21 +44,21 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 function readingToTelemetry(reading) {
   const metrics = reading.metrics ?? {};
-  const temperatureValid = metrics.temperature_valid ?? metrics.temp_valid ?? metrics.TEMP_VALID
-    ?? reading.temperature_valid ?? reading.temp_valid ?? reading.TEMP_VALID;
-  const currentValid = metrics.i_valid ?? metrics.I_VALID ?? reading.i_valid ?? reading.I_VALID;
-  const backendFault = ['fault', 'error', 'alarm'].includes(String(reading.state).toLowerCase());
+  const alerts = reading.alerts ?? [];
+  const backendFault = alerts.length > 0 || ['fault', 'error', 'alarm'].includes(String(reading.state).toLowerCase());
+  const faultReason = alerts.length
+    ? alerts.map((alert) => `${alert.title}: ${alert.action}`).join('; ')
+    : '';
 
   return {
     mode: String(reading.state).toLowerCase() === 'off' ? 'off' : 'auto',
     isFaulted: backendFault,
-    faultReason: backendFault ? 'Pump fault reported by telemetry' : '',
+    faultReason: backendFault ? (faultReason || 'Pump fault reported by telemetry') : '',
+    alerts,
     telemetry: {
       current: [metrics.i_l1, metrics.i_l2, metrics.i_l3],
       unbalance: metrics.unbalance_percentage,
       temperature: metrics.temperature,
-      temperatureValid,
-      currentValid,
     },
   };
 }
