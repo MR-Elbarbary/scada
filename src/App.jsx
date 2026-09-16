@@ -36,17 +36,25 @@ function clamp(value, min, max) {
 // refactor this function
 
 function getNodeCenter(node) {
-  // Center relative to 100x110 SVG dimensions of PumpNode
-  return { x: node.x + 50, y: node.y + 50 };
+  return { x: node.x + 95, y: node.y + 65 };
 }
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const TELEMETRY_MAX_AGE_MS = 15_000;
+
+function isReadingDisconnected(reading) {
+  const timestampMs = Date.parse(reading.timestamp);
+  return Number.isFinite(timestampMs) && Date.now() - timestampMs > TELEMETRY_MAX_AGE_MS;
+}
 
 function readingToTelemetry(reading) {
   const metrics = reading.metrics ?? {};
   const alerts = reading.alerts ?? [];
-  const backendFault = alerts.length > 0 || ['fault', 'error', 'alarm'].includes(String(reading.state).toLowerCase());
-  const faultReason = alerts.length
+  const disconnected = isReadingDisconnected(reading);
+  const backendFault = disconnected || alerts.length > 0 || ['fault', 'error', 'alarm'].includes(String(reading.state).toLowerCase());
+  const faultReason = disconnected
+    ? 'Disconnected: telemetry is older than 15 seconds'
+    : alerts.length
     ? alerts.map((alert) => `${alert.title}: ${alert.action}`).join('; ')
     : '';
 
@@ -56,9 +64,9 @@ function readingToTelemetry(reading) {
     faultReason: backendFault ? (faultReason || 'Pump fault reported by telemetry') : '',
     alerts,
     telemetry: {
-      current: [metrics.i_l1, metrics.i_l2, metrics.i_l3],
-      unbalance: metrics.unbalance_percentage,
-      temperature: metrics.temperature,
+      current: disconnected ? [null, null, null] : [metrics.i_l1, metrics.i_l2, metrics.i_l3],
+      unbalance: disconnected ? null : metrics.unbalance_percentage,
+      temperature: disconnected ? null : metrics.temperature,
     },
   };
 }
@@ -69,8 +77,8 @@ function createPumpNode(reading, index, id) {
     pumpId: String(reading.id),
     type: 'pump',
     label: reading.name || `Pump ${reading.id}`,
-    x: 100 + (index % 4) * 180,
-    y: 120 + Math.floor(index / 4) * 150,
+    x: 100 + (index % 4) * 230,
+    y: 140 + Math.floor(index / 4) * 190,
     tags: ['heat'],
     ...readingToTelemetry(reading),
   };
@@ -198,8 +206,8 @@ export default function App() {
   const selectedNode = nodes.find((p) => p.id === selectedId) ?? nodes[0] ?? null;
   const canvasBounds = useMemo(
     () => ({
-      width: Math.max(900, ...nodes.map((node) => node.x + 190)),
-      height: Math.max(560, ...nodes.map((node) => node.y + 140)),
+      width: Math.max(1100, ...nodes.map((node) => node.x + 230)),
+      height: Math.max(650, ...nodes.map((node) => node.y + 210)),
     }),
     [nodes]
   );
@@ -289,8 +297,8 @@ export default function App() {
       id: nextId,
       type,
       label: `${type.toUpperCase()}-${nodes.length + 1}`,
-      x: 100 + (nodes.length % 4) * 120,
-      y: 150 + Math.floor(nodes.length / 4) * 120,
+      x: 100 + (nodes.length % 4) * 230,
+      y: 150 + Math.floor(nodes.length / 4) * 190,
       mode: 'auto',
       isFaulted: false,
       telemetry,

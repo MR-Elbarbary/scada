@@ -100,8 +100,8 @@ export default function PumpNode({
         className="pump-node-pure"
         onClick={handleNodeClick}
         style={{
-          width: "150px",
-          height: "100px",
+          width: "190px",
+          height: "130px",
           '--stroke': currentTheme.stroke,
           '--fill': currentTheme.fill,
         }}
@@ -254,12 +254,12 @@ export default function PumpNode({
         }
         .pump-tags {
           position: absolute;
-          bottom: calc(100% - 8px);
-          left: -8px;
+          bottom: calc(100% - 10px);
+          left: -10px;
           z-index: 1;
           display: flex;
           flex-direction: column-reverse;
-          gap: 4px;
+          gap: 6px;
           align-items: flex-start;
           pointer-events: none;
         }
@@ -267,10 +267,10 @@ export default function PumpNode({
           display: flex;
           flex-direction: column;
           gap: 1px;
-          min-width: 52px;
-          padding: 4px 6px;
+          min-width: 72px;
+          padding: 6px 8px;
           border: 1px solid rgba(251, 191, 36, 0.55);
-          border-radius: 5px;
+          border-radius: 6px;
           background: rgba(15, 23, 42, 0.94);
           color: #fbbf24;
           box-shadow: 0 3px 8px rgba(2, 6, 23, 0.4);
@@ -281,14 +281,14 @@ export default function PumpNode({
         }
         .pump-tag span {
           color: #94a3b8;
-          font-size: 8px;
+          font-size: 10px;
           font-weight: 700;
           letter-spacing: 0.08em;
           line-height: 1;
         }
         .pump-tag strong {
-          font-size: 11px;
-          line-height: 1.1;
+          font-size: 14px;
+          line-height: 1.15;
         }
         .pump-tag.warning {
           border-color: rgba(248, 113, 113, 0.7);

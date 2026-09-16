@@ -89,7 +89,7 @@ export default function TankNode({
     <>
       {/* 1. Isometric / Skeuomorphic SVG Render */}
       <div className="tank-node-industrial flex flex-col items-center select-none" onClick={handleNodeClick}>
-        <svg width="120" height="140" viewBox="0 0 120 140" className="drop-shadow-2xl">
+        <svg width="180" height="205" viewBox="0 0 120 140" className="drop-shadow-2xl">
           <defs>
             {/* Metallic Steel Vessel Gradient */}
             <linearGradient id={`metallic-body-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
