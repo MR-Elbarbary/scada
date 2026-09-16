@@ -1,0 +1,57 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <!-- Main Outer Outlines and Shapes -->
+  <g stroke="#070706" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    
+    <!-- Tank Support Legs/Feet -->
+    <path d="M 90 310 L 80 340 L 110 340 L 120 310 Z" fill="var(--fill, currentColor)" />
+    <path d="M 280 310 L 270 340 L 300 340 L 310 310 Z" fill="var(--fill, currentColor)" />
+    <circle cx="95" cy="330" r="4" fill="#FDFDFE" />
+    <circle cx="285" cy="330" r="4" fill="#FDFDFE" />
+
+    <!-- Main Horizontal Air Receiver Tank Body -->
+    <rect x="60" y="210" width="280" height="110" rx="40" fill="var(--fill, currentColor)" />
+    <!-- Tank Weld Seam Accent Line -->
+    <line x1="110" y1="210" x2="110" y2="320" stroke="var(--stroke, currentColor)" stroke-width="4" />
+    <line x1="290" y1="210" x2="290" y2="320" stroke="var(--stroke, currentColor)" stroke-width="4" />
+
+    <!-- Tank Outlet Valve Port (Right Side) -->
+    <rect x="340" y="250" width="20" height="30" fill="var(--fill, currentColor)" />
+    <circle cx="350" cy="265" r="3" fill="#FDFDFE" />
+
+    <!-- Top Mounting Deck / Bedplate -->
+    <rect x="100" y="195" width="200" height="15" rx="3" fill="var(--stroke, currentColor)" />
+
+    <!-- Electric Drive Motor (Right Top) -->
+    <rect x="230" y="125" width="60" height="70" rx="6" fill="var(--fill, currentColor)" />
+    <!-- Motor Cooling Fins -->
+    <line x1="240" y1="135" x2="280" y2="135" stroke="var(--stroke, currentColor)" stroke-width="3" />
+    <line x1="240" y1="145" x2="280" y2="145" stroke="var(--stroke, currentColor)" stroke-width="3" />
+    <line x1="240" y1="155" x2="280" y2="155" stroke="var(--stroke, currentColor)" stroke-width="3" />
+
+    <!-- V-Twin Compressor Pump Block (Left Top) -->
+    <!-- Crankcase Base -->
+    <rect x="110" y="150" width="70" height="45" rx="4" fill="var(--fill, currentColor)" />
+    
+    <!-- Left Cylinder Fin Stack -->
+    <polygon points="115,150 100,95 130,95 135,150" fill="var(--fill, currentColor)" />
+    <line x1="108" y1="110" x2="128" y2="110" stroke="var(--stroke, currentColor)" stroke-width="4" />
+    <line x1="111" y1="125" x2="131" y2="125" stroke="var(--stroke, currentColor)" stroke-width="4" />
+    <line x1="113" y1="140" x2="133" y2="140" stroke="var(--stroke, currentColor)" stroke-width="4" />
+
+    <!-- Right Cylinder Fin Stack -->
+    <polygon points="155,150 160,95 190,95 175,150" fill="var(--fill, currentColor)" />
+    <line x1="162" y1="110" x2="182" y2="110" stroke="var(--stroke, currentColor)" stroke-width="4" />
+    <line x1="159" y1="125" x2="179" y2="125" stroke="var(--stroke, currentColor)" stroke-width="4" />
+    <line x1="157" y1="140" x2="177" y2="140" stroke="var(--stroke, currentColor)" stroke-width="4" />
+
+    <!-- Air Filter / Intake Silencer (Top Center) -->
+    <circle cx="145" cy="80" r="16" fill="var(--fill, currentColor)" />
+    <circle cx="145" cy="80" r="6" fill="#FDFDFE" />
+
+    <!-- Pressure Gauge (Center Top) -->
+    <line x1="205" y1="195" x2="205" y2="165" stroke="#070706" stroke-width="6" />
+    <circle cx="205" cy="150" r="18" fill="#FDFDFE" stroke="var(--stroke, currentColor)" stroke-width="3" />
+    <!-- Gauge Needle -->
+    <line x1="205" y1="150" x2="214" y2="142" stroke="var(--stroke, currentColor)" stroke-width="3" />
+  </g>
+</svg>
