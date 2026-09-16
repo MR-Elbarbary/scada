@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Pumpsvg from "./assets/pump_dynamic.svg?react";
 
 const DEFAULT_TELEMETRY = {
@@ -26,21 +26,10 @@ export default function PumpNode({
   onClick,
 }) {
   const [mode, setMode] = useState(initialMode);
-  const [hasError, setHasError] = useState(isFaulted);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const liveData = telemetry;
-  const temperatureFault = liveData.temperatureValid === undefined
-    ? liveData.temperature == null
-    : Number(liveData.temperatureValid) !== 1;
-  const currentFault = liveData.currentValid !== undefined && Number(liveData.currentValid) !== 1;
-  const sensorFaultReasons = [
-    temperatureFault ? 'Temperature sensor is disconnected or invalid' : '',
-    currentFault ? 'Current sensor is disconnected or invalid' : '',
-  ].filter(Boolean);
-  const telemetryFaulted = sensorFaultReasons.length > 0;
-  const displayedFaultReason = sensorFaultReasons.join('; ') || faultReason || (hasError ? 'Pump fault reported by telemetry' : '');
-  const temperatureIsHot = !temperatureFault && Number(liveData.temperature) > 50;
-  const displayedTemperature = temperatureFault ? '-' : (liveData.temperature ?? '-');
+  const displayedFaultReason = faultReason || (isFaulted ? 'Pump fault reported by telemetry' : '');
+  const displayedTemperature = liveData.temperature ?? '-';
   const tags = initialTags ?? [];
   const currentValues = (liveData.current ?? []).filter((value) => value != null && !Number.isNaN(Number(value)));
   const averageCurrent = currentValues.length
@@ -55,7 +44,7 @@ export default function PumpNode({
   };
 
   // Compute active status: 'error' | 'running' | 'manual' | 'idle'
-  const state = hasError || telemetryFaulted
+  const state = isFaulted
     ? 'error'
     : mode === 'auto'
     ? 'running'
@@ -104,10 +93,6 @@ export default function PumpNode({
     if (onClick) onClick(id);
   };
 
-  useEffect(() => {
-    setHasError(isFaulted);
-  }, [isFaulted]);
-
   return (
     <>
       {/* 1. Pure SVG Node (No outer card background or frame) */}
@@ -123,7 +108,7 @@ export default function PumpNode({
       >
           <div className="pump-tags">
             {tags.includes('heat') && (
-              <div className={`pump-tag ${temperatureIsHot ? 'warning' : ''}`}>
+              <div className="pump-tag">
                 <span>HEAT</span>
                 <strong>{displayedTemperature}°C</strong>
               </div>
@@ -189,7 +174,7 @@ export default function PumpNode({
                   </div>
                   <div className="metric-card full-width">
                     <span className="metric-label">Temperature</span>
-                    <span className={`metric-value ${temperatureIsHot ? 'warning' : ''}`}>
+                    <span className="metric-value">
                       {displayedTemperature} <small>°C</small>
                     </span>
                   </div>
@@ -219,12 +204,6 @@ export default function PumpNode({
               <section className="control-section">
                 <div className="control-section-header">
                   <h4>Device Mode Control</h4>
-                  <button
-                    className={`trip-toggle-btn ${hasError ? 'active' : ''}`}
-                    onClick={() => setHasError(!hasError)}
-                  >
-                    {hasError ? 'Clear Fault' : 'Simulate Fault'}
-                  </button>
                 </div>
 
                 <div className="rotary-switch-container">
