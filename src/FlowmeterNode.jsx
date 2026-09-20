@@ -109,8 +109,8 @@ export default function FlowmeterNode({
       className="flow-meter-pure"
       onClick={handleNodeClick}
       style={{
-        width: "150px",
-        height: "100px",
+        width: "250px",
+        height: "150px",
         '--stroke': currentTheme.stroke,
         '--fill': currentTheme.fill,
       }}

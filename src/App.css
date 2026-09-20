@@ -130,6 +130,41 @@
 .dot-green { background: #34d399; }
 .dot-rose { background: #fb7185; }
 
+.dummy-node {
+  display: flex;
+  width: 100px;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dummy-node-circle {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #67e8f9;
+  border-radius: 50%;
+  background: #0e7490;
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.75);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dummy-node:hover .dummy-node-circle {
+  transform: scale(1.12);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.95);
+}
+
+.dummy-node-label {
+  color: #a5f3fc;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .quick-actions {
   margin-top: 18px;
   display: flex;

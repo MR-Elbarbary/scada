@@ -7,6 +7,7 @@ import TransformerNode from './TransformerNode.jsx';
 import IndustrialPipesCanvas from './IndustrialPipesCanvas.jsx';
 import ValveNode from './ValveNode.jsx';
 import CompressorNode from './CompressorNode.jsx';
+import DummyNode from './DummyNode.jsx';
 
 
 const Node_TEMPLATE = {
@@ -22,6 +23,7 @@ const NODE_COMPONENTS = {
   transformer: TransformerNode,
   valve: ValveNode,
   compressor: CompressorNode,
+  dummy: DummyNode,
 };
 
 
@@ -36,6 +38,14 @@ function clamp(value, min, max) {
 // refactor this function
 
 function getNodeCenter(node) {
+  if (node.type === 'dummy') {
+    return { x: node.x + 50, y: node.y + 15 };
+  }
+
+  if (node.type === 'flowmeter') {
+    return { x: node.x + 125, y: node.y + 100 };
+  }
+
   return { x: node.x + 95, y: node.y + 65 };
 }
 
@@ -79,7 +89,7 @@ function createPumpNode(reading, index, id) {
     label: reading.name || `Pump ${reading.id}`,
     x: 100 + (index % 4) * 230,
     y: 140 + Math.floor(index / 4) * 190,
-    tags: ['heat'],
+    tags: ['c1', 'c2', 'c3'],
     ...readingToTelemetry(reading),
   };
 }
@@ -131,9 +141,9 @@ export default function App() {
       savedLayout = null;
     }
 
-    loadedLayoutGateway.current = selectedGateway;
     const restoreTimer = window.setTimeout(() => {
-      setNodes(savedLayout?.nodes ?? []);
+      loadedLayoutGateway.current = selectedGateway;
+      setNodes(savedLayout?.nodes ?? initialNodes);
       setConnections(savedLayout?.connections ?? []);
       setSelectedId(savedLayout?.nodes?.[0]?.id ?? null);
       setSelectedConnectionId(null);
@@ -280,16 +290,22 @@ export default function App() {
     if (type === 'pump') {
       const reading = pumpReadings.find((item) => String(item.id) === String(selectedPumpId));
       if (!reading || nodes.some((node) => node.pumpId === String(reading.id))) return;
-      generatedNodeId.current += 1;
-      const nextId = `pump-node-${generatedNodeId.current}`;
+      let nextId;
+      do {
+        generatedNodeId.current += 1;
+        nextId = `pump-node-${generatedNodeId.current}`;
+      } while (nodes.some((node) => node.id === nextId));
       const newNode = createPumpNode(reading, nodes.length, nextId);
       setNodes((current) => [...current, newNode]);
       setSelectedId(nextId);
       return;
     }
 
-    generatedNodeId.current += 1;
-    const nextId = `p-${generatedNodeId.current}`;
+    let nextId;
+    do {
+      generatedNodeId.current += 1;
+      nextId = `p-${generatedNodeId.current}`;
+    } while (nodes.some((node) => node.id === nextId));
     const telemetry = type === 'tank'
       ? { level: 68, volume: 13.6, capacity: 20.0, inflow: 45.2, outflow: 42.0, temperature: 24.5 }
       : { flow: 110, pressure: 4.0, power: 75, temp: 40.0, rpm: 2900 };
@@ -405,6 +421,18 @@ export default function App() {
     }
   };
 
+  const handleGatewayChange = (event) => {
+    const nextGateway = event.target.value;
+    loadedLayoutGateway.current = '';
+    setNodes([]);
+    setConnections([]);
+    setSelectedId(null);
+    setSelectedConnectionId(null);
+    setPumpReadings([]);
+    setSelectedPumpId('');
+    setSelectedGateway(nextGateway);
+  };
+
   return (
     <div className={`scada-app ${theme === 'light' ? 'theme-light' : ''}`}>
       <aside className="sidebar">
@@ -464,7 +492,7 @@ export default function App() {
             id="gateway-select"
             className="gateway-select"
             value={selectedGateway}
-            onChange={(event) => setSelectedGateway(event.target.value)}
+            onChange={handleGatewayChange}
             disabled={!gateways.length}
           >
             {!gateways.length && <option value="">No gateways available</option>}
@@ -648,12 +676,12 @@ export default function App() {
                   <h3>{selectedNode.label}</h3>
                   <p className="detail-meta">ID: {selectedNode.id}</p>
                   <div className="detail-list">
-                    <span>Mode: {selectedNode.mode.toUpperCase()}</span>
-                    <span>Phase L1: {selectedNode.telemetry.current?.[0] ?? '—'} A</span>
-                    <span>Phase L2: {selectedNode.telemetry.current?.[1] ?? '—'} A</span>
-                    <span>Phase L3: {selectedNode.telemetry.current?.[2] ?? '—'} A</span>
-                    <span>Imbalance: {selectedNode.telemetry.unbalance ?? '—'}%</span>
-                    <span>Temp: {selectedNode.telemetry.temperature ?? '—'} °C</span>
+                    <span>Mode: {(selectedNode.mode ?? 'standby').toUpperCase()}</span>
+                    <span>Phase L1: {selectedNode.telemetry?.current?.[0] ?? '—'} A</span>
+                    <span>Phase L2: {selectedNode.telemetry?.current?.[1] ?? '—'} A</span>
+                    <span>Phase L3: {selectedNode.telemetry?.current?.[2] ?? '—'} A</span>
+                    <span>Imbalance: {selectedNode.telemetry?.unbalance ?? '—'}%</span>
+                    <span>Temp: {selectedNode.telemetry?.temperature ?? '—'} °C</span>
                     {selectedNode.faultReason && <span className="fault-detail">Fault: {selectedNode.faultReason}</span>}
                   </div>
                 </>
